@@ -120,6 +120,26 @@ public class MainActivity extends AppCompatActivity {
         microphone.setImageResource(R.drawable.ic_pause);
     }
 
+    private void rawBytesToDouble(byte []convertData){
+        double[] micBufferData = new double[bufferSize];
+        final int bytesPerSample = 2; // As it is 16bit PCM
+        final double amplification = 100.0; // choose a number as you like
+        for (int index = 0, floatIndex = 0; index < bytesRecorded - bytesPerSample + 1; index += bytesPerSample, floatIndex++) {
+            double sample = 0;
+            for (int b = 0; b < bytesPerSample; b++) {
+                int v = convertData[index + b];
+                if (b < bytesPerSample - 1 || bytesPerSample == 1) {
+                    v &= 0xFF;
+                }
+                sample += v << (b * 8);
+            }
+            double sample32 = amplification * (sample / 32768.0);
+            micBufferData[floatIndex] = sample32;
+            Log.i(WRITE_TAG, micBufferData.toString());
+        }
+
+    }
+
     private void stopRecording(){
         if(recorder != null){
             isRecording = false;
@@ -149,8 +169,9 @@ public class MainActivity extends AppCompatActivity {
             read = recorder.read(data, 0 , bufferSize);
 
             if(read != AudioRecord.ERROR_INVALID_OPERATION) {
-                Log.i(WRITE_TAG, new String(data, StandardCharsets.UTF_8));
+
                 os.write(data);
+                rawBytesToDouble(data);
             }
         }
         os.close();
