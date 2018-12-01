@@ -1,9 +1,12 @@
 package music.bumaza.musicbot.utils;
 
+import android.content.res.Resources;
 import android.media.AudioFormat;
 
 public class AppConstants {
 
+
+    public static Resources resources;
 
     /**
      * AudioRecorder constants
@@ -24,4 +27,10 @@ public class AppConstants {
      * Log tags
      */
     public static final String WRITE_TAG = "WRITING";
+
+    public static int convertToPx(int dp) {
+        if(resources == null) return 0;
+        final float scale = resources.getDisplayMetrics().density;
+        return (int) (dp * scale + 0.5f);
+    }
 }

@@ -2,7 +2,9 @@ package music.bumaza.musicbot;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -21,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import music.bumaza.musicbot.view.MusicSheetView;
 
 import static music.bumaza.musicbot.utils.AppConstants.*;
 
@@ -50,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageView microphone;
 
+    private MusicSheetView musicSheetView;
+
 
 
 
@@ -57,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        resources = this.getResources();
 
         setButtonHandlers();
 
@@ -67,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         if(!checkPermissionFromDevice()){
             reqeustPermission();
         }
+
     }
 
     private boolean checkPermissionFromDevice(){
@@ -107,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         }, "AudioRecord Thread");
 
         recordingThread.start();
-
+        showSheets(true);
         microphone.setImageResource(R.drawable.ic_pause);
     }
 
@@ -121,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
             recorder = null;
             recordingThread = null;
         }
-
+        showSheets(false);
         microphone.setImageResource(R.drawable.ic_mic);
 
     }
@@ -187,15 +196,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void setButtonHandlers(){
+    private void setButtonHandlers() {
         microphone = findViewById(R.id.button_mid);
         microphone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isRecording) stopRecording();
+                if (isRecording) stopRecording();
                 else startRecording();
             }
         });
+        musicSheetView = findViewById(R.id.sheets);
+    }
+
+    private void showSheets(boolean show){
+        musicSheetView.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private String getTempFilename(){
@@ -224,6 +238,28 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        if(hasFocus) hideSystemUI();
+    }
+
+    private void hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 }
 
