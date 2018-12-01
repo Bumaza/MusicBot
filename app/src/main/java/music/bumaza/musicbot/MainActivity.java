@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -23,7 +24,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
+import music.bumaza.musicbot.data.TonePageAdapter;
 import music.bumaza.musicbot.view.MusicSheetView;
 
 import static music.bumaza.musicbot.utils.AppConstants.*;
@@ -56,8 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     private MusicSheetView musicSheetView;
 
-
-
+    private ViewPager viewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
         if(!checkPermissionFromDevice()){
             reqeustPermission();
         }
+
+
 
     }
 
@@ -227,6 +232,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         musicSheetView = findViewById(R.id.sheets);
+
+        viewPager = findViewById(R.id.toneViewPager);
+        List<String> tones = Arrays.asList("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H");
+        TonePageAdapter tonePageAdapter = new TonePageAdapter(this, tones);
+        viewPager.setAdapter(tonePageAdapter);
+        viewPager.setCurrentItem(tones.size()/2);
+        //viewPager.setPageMargin(convertToPx(-250));
+        viewPager.setClipToPadding(false);
+        viewPager.setPadding(convertToPx(100),0,convertToPx(100),0);
+
     }
 
     private void showSheets(boolean show){
