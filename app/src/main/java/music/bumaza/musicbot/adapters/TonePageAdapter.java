@@ -1,24 +1,24 @@
-package music.bumaza.musicbot.data;
+package music.bumaza.musicbot.adapters;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import music.bumaza.musicbot.R;
+import music.bumaza.musicbot.data.Tone;
+
 import java.util.List;
 
 public class TonePageAdapter extends PagerAdapter{
 
     private LayoutInflater inflater;
-    private List<String> notes;
+    private List<Tone> notes;
 
-
-    public TonePageAdapter(Context context, List<String> notes){
+    public TonePageAdapter(Context context, List<Tone> notes){
         inflater = LayoutInflater.from(context);
         this.notes = notes;
     }
@@ -26,7 +26,7 @@ public class TonePageAdapter extends PagerAdapter{
     @NonNull
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
-        String note = notes.get(position);
+        String note = notes.get(position).getName();
         ViewGroup layout = (ViewGroup) inflater.inflate(R.layout.tone_item, container, false);
 
         TextView tvTone = layout.findViewById(R.id.tone);

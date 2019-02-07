@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MusicBot</string>
+
+    <string name="frequency_text">%.2f Hz</string>
+
+
 </resources>

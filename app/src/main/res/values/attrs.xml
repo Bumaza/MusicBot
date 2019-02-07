@@ -2,8 +2,7 @@
 <resources>
 
     <declare-styleable name="MusicSheetView">
-
-
     </declare-styleable>
+    <declare-styleable name="VisualizerView"></declare-styleable>
 
 </resources>

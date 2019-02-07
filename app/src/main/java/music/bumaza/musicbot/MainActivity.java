@@ -1,66 +1,62 @@
 package music.bumaza.musicbot;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.media.AudioManager;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 
-import music.bumaza.musicbot.data.TonePageAdapter;
+import music.bumaza.musicbot.adapters.TonePageAdapter;
+import music.bumaza.musicbot.audio.AudioRecordingHandler;
+import music.bumaza.musicbot.audio.AudioRecordingThread;
+import music.bumaza.musicbot.data.Tone;
+import music.bumaza.musicbot.utils.StorageUtils;
+import music.bumaza.musicbot.view.BarGraphRenderer;
 import music.bumaza.musicbot.view.MusicSheetView;
+import music.bumaza.musicbot.view.VisualizerView;
 
-import static music.bumaza.musicbot.utils.AppConstants.*;
+import static music.bumaza.musicbot.utils.AppUtils.*;
 
 public class MainActivity extends AppCompatActivity {
 
 
     /**
+     * FFT
+     */
+    private AudioRecord recorder = null;
+    private AudioRecordingThread recordingThread = null;
+    private VisualizerView visualizerView;
+    private BarGraphRenderer barGraphRenderer;
+
+
+    /**
      * Java
      */
-    private Thread recordingThread = null;
-
     private boolean isRecording = false;
-
     private int bytesRecorded;
-
     private int bufferSize;
-
     private int[] bufferData;
-
     private short[] audioData;
 
 
     /**
      * Android
      */
-    private AudioRecord recorder = null;
-
     private ImageView microphone;
-
     private MusicSheetView musicSheetView;
-
+    private TextView frequncyTv;
     private ViewPager viewPager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,15 +67,18 @@ public class MainActivity extends AppCompatActivity {
 
         setButtonHandlers();
 
-        bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLE_RATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING) * 3;
+        bufferSize = AudioRecord.getMinBufferSize(SAMPLING_RATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING) * 3;
 
         audioData = new short[bufferSize];
+
+        visualizerView = findViewById(R.id.visualizerView);
+        setupVisualizer();
+
+        frequncyTv = findViewById(R.id.frequency);
 
         if(!checkPermissionFromDevice()){
             reqeustPermission();
         }
-
-
 
     }
 
@@ -102,124 +101,71 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-
-        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLE_RATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bufferSize);
-        recorder.startRecording();
-
-        isRecording = true;
-
-        recordingThread = new Thread(new Runnable() {
+        recordingThread = new AudioRecordingThread(StorageUtils.getFileName(), new AudioRecordingHandler() {
             @Override
-            public void run() {
-                try {
-                    writeAudioDataToFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            public void onFftDataCapture(final byte[] bytes) {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        if (visualizerView != null) {
+                            visualizerView.updateVisualizerFFT(bytes);
+                            if(barGraphRenderer.getIndexOfTone() != null){
+                                viewPager.setCurrentItem(barGraphRenderer.getIndexOfTone());
+                                frequncyTv.setText(getString(R.string.frequency_text, barGraphRenderer.getFrequency()));
+                            }
+                        }
+                    }
+                });
             }
-        }, "AudioRecord Thread");
 
+            @Override
+            public void onRecordSuccess() {}
+
+            @Override
+            public void onRecordingError() {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        stopRecording();
+                    }
+                });
+            }
+
+            @Override
+            public void onRecordSaveError() {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        stopRecording();
+                    }
+                });
+            }
+        });
         recordingThread.start();
-        showSheets(true);
-        microphone.setImageResource(R.drawable.ic_pause);
     }
 
-    private void rawBytesToDouble(byte []convertData){
-        double[] micBufferData = new double[bufferSize];
-        final int bytesPerSample = 2; // As it is 16bit PCM
-        final double amplification = 100.0; // choose a number as you like
-        for (int index = 0, floatIndex = 0; index < bytesRecorded - bytesPerSample + 1; index += bytesPerSample, floatIndex++) {
-            double sample = 0;
-            for (int b = 0; b < bytesPerSample; b++) {
-                int v = convertData[index + b];
-                if (b < bytesPerSample - 1 || bytesPerSample == 1) {
-                    v &= 0xFF;
-                }
-                sample += v << (b * 8);
-            }
-            double sample32 = amplification * (sample / 32768.0);
-            micBufferData[floatIndex] = sample32;
-            Log.i(WRITE_TAG, micBufferData.toString());
-        }
-
-    }
-
-    private void stopRecording(){
-        if(recorder != null){
-            isRecording = false;
-
-            recorder.stop();
-            recorder.release();
-
-            recorder = null;
+    private void stopRecording() {
+        if (recordingThread != null) {
+            recordingThread.stopRecording();
             recordingThread = null;
         }
-        showSheets(false);
-        microphone.setImageResource(R.drawable.ic_mic);
-
     }
 
-    private void writeAudioDataToFile() throws IOException, FileNotFoundException{
+    @Override
+    protected void onPause() {
+        super.onPause();
 
-        byte data[] = new byte[bufferSize];
-        String filename = getTempFilename();
-        FileOutputStream os = null;
-
-        os = new FileOutputStream(filename);
-
-        int read = 0;
-
-        while(isRecording){
-            read = recorder.read(data, 0 , bufferSize);
-
-            if(read != AudioRecord.ERROR_INVALID_OPERATION) {
-
-                os.write(data);
-                rawBytesToDouble(data);
-            }
-        }
-        os.close();
+        stopRecording();
     }
 
-    private void copyWaveFile(String inFilename,String outFilename){
-        FileInputStream in = null;
-        FileOutputStream out = null;
-        long totalAudioLen = 0;
-        long totalDataLen = totalAudioLen + 36;
-        long longSampleRate = RECORDER_SAMPLE_RATE;
-        int channels = 2;
-        long byteRate = RECORDER_BPP * RECORDER_SAMPLE_RATE * channels/8;
+    @Override
+    protected void onDestroy() {
+        stopRecording();
+        releaseVisualizer();
 
-        byte[] data = new byte[bufferSize];
-
-        try {
-            in = new FileInputStream(inFilename);
-            out = new FileOutputStream(outFilename);
-            totalAudioLen = in.getChannel().size();
-            totalDataLen = totalAudioLen + 36;
-
-            WriteWaveFileHeader(out, totalAudioLen, totalDataLen,
-                    longSampleRate, channels, byteRate);
-
-            while(in.read(data) != -1){
-                out.write(data);
-            }
-
-            in.close();
-            out.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        super.onDestroy();
     }
 
-    private void WriteWaveFileHeader(
-            FileOutputStream out, long totalAudioLen,
-            long totalDataLen, long longSampleRate, int channels,
-            long byteRate) throws IOException {
-
+    private void releaseVisualizer() {
+        visualizerView.release();
+        visualizerView = null;
     }
 
     private void setButtonHandlers() {
@@ -229,51 +175,31 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (isRecording) stopRecording();
                 else startRecording();
+                isRecording = !isRecording;
+                microphone.setImageResource(isRecording ? R.drawable.ic_pause : R.drawable.ic_mic);
+                frequncyTv.setVisibility(isRecording ? View.VISIBLE : View.GONE);
+                visualizerView.setVisibility(isRecording ? View.VISIBLE : View.GONE);
             }
         });
         musicSheetView = findViewById(R.id.sheets);
 
         viewPager = findViewById(R.id.toneViewPager);
-        List<String> tones = Arrays.asList("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H");
-        TonePageAdapter tonePageAdapter = new TonePageAdapter(this, tones);
+        TonePageAdapter tonePageAdapter = new TonePageAdapter(this, Tone.tones);
         viewPager.setAdapter(tonePageAdapter);
-        viewPager.setCurrentItem(tones.size()/2);
+        viewPager.setCurrentItem(Tone.tones.size()/2);
         //viewPager.setPageMargin(convertToPx(-250));
         viewPager.setClipToPadding(false);
         viewPager.setPadding(convertToPx(100),0,convertToPx(100),0);
 
     }
 
-    private void showSheets(boolean show){
-        musicSheetView.setVisibility(show ? View.VISIBLE : View.GONE);
-    }
-
-    private String getTempFilename(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath, AUDIO_RECORDER_FOLDER);
-
-        if(!file.exists()){
-            file.mkdirs();
-        }
-
-        File tempFile = new File(filepath, AUDIO_RECORDER_TEMP_FILE);
-
-        if(tempFile.exists())
-            tempFile.delete();
-
-        return (file.getAbsolutePath() + "/" + AUDIO_RECORDER_TEMP_FILE);
-    }
-
-
-    private String getFilename(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
-
-        if(!file.exists()){
-            file.mkdirs();
-        }
-
-        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV);
+    private void setupVisualizer() {
+        Paint paint = new Paint();
+        paint.setStrokeWidth(5f);
+        paint.setAntiAlias(true);
+        paint.setColor(Color.argb(200, 255, 255, 255));
+        barGraphRenderer = new BarGraphRenderer(2, paint, false);
+        visualizerView.addRenderer(barGraphRenderer);
     }
 
     @Override

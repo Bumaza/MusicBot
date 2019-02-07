@@ -4,9 +4,9 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 
-import music.bumaza.musicbot.utils.Tone;
+import music.bumaza.musicbot.data.Tone;
 
-import static music.bumaza.musicbot.utils.AppConstants.*;
+import static music.bumaza.musicbot.utils.AppUtils.*;
 
 public class ToneGenerator {
 
@@ -15,7 +15,7 @@ public class ToneGenerator {
      * Java
      */
     private static final int duration = 3; // seconds
-    private static final int sampleRate = RECORDER_SAMPLE_RATE;
+    private static final int sampleRate = SAMPLING_RATE;
     private static final int numSamples = duration * sampleRate;
     private static final double sample[] = new double[numSamples];
 
@@ -27,7 +27,6 @@ public class ToneGenerator {
     /**
      * Android
      */
-
     private static void genTone(Tone tone){
         // fill out the array
         for (int i = 0; i < numSamples; ++i) {

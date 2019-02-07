@@ -8,7 +8,7 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import static music.bumaza.musicbot.utils.AppConstants.*;
+import static music.bumaza.musicbot.utils.AppUtils.*;
 
 public class MusicSheetView extends View{
 
