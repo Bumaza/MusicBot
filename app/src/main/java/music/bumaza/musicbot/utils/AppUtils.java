@@ -22,6 +22,11 @@ public class AppUtils {
     public static final String AUDIO_RECORDER_FOLDER = "MusicBotAudio";
     public static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
 
+    public static final int LOWER_LIMIT = 16;
+    public static final int UPPER_LIMIT = 1100;
+
+    public static final int[] RANGE = new int[] { 40, 80, 120, 180, 300, 500, 700, 1000 };
+
 
     public static final int MY_PERMISSIONS_RECORD_AUDIO = 20;
 
@@ -35,5 +40,11 @@ public class AppUtils {
         if(resources == null) return 0;
         final float scale = resources.getDisplayMetrics().density;
         return (int) (dp * scale + 0.5f);
+    }
+
+    public static int getIndex(int freq) {
+        int i = 0;
+        while (i < RANGE.length && RANGE[i] < freq) i++;
+        return Math.min(i, RANGE.length-1);
     }
 }

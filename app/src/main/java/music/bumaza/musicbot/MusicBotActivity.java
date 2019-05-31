@@ -1,46 +1,55 @@
 package music.bumaza.musicbot;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.AudioRecord;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.support.v4.view.GravityCompat;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.view.MenuItem;
+import android.support.design.widget.NavigationView;
+import android.support.v4.widget.DrawerLayout;
+
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.animation.Animation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import dyanamitechetan.vusikview.VusikView;
 import music.bumaza.musicbot.adapters.TonePageAdapter;
-import music.bumaza.musicbot.api.ApiRequest;
-import music.bumaza.musicbot.api.ApiResponse;
-import music.bumaza.musicbot.api.ApiSongRequestBody;
-import music.bumaza.musicbot.api.MusicBotApi;
 import music.bumaza.musicbot.audio.AudioRecordingHandler;
 import music.bumaza.musicbot.audio.AudioRecordingThread;
 import music.bumaza.musicbot.data.Tone;
 import music.bumaza.musicbot.utils.StorageUtils;
 import music.bumaza.musicbot.view.BarGraphRenderer;
 import music.bumaza.musicbot.view.MusicSheetView;
+import music.bumaza.musicbot.view.NoteAnimation;
 import music.bumaza.musicbot.view.VisualizerView;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
-import static music.bumaza.musicbot.utils.AppUtils.*;
+import static music.bumaza.musicbot.utils.AppUtils.MY_PERMISSIONS_RECORD_AUDIO;
+import static music.bumaza.musicbot.utils.AppUtils.RECORDER_AUDIO_ENCODING;
+import static music.bumaza.musicbot.utils.AppUtils.RECORDER_CHANNELS;
+import static music.bumaza.musicbot.utils.AppUtils.SAMPLING_RATE;
+import static music.bumaza.musicbot.utils.AppUtils.convertToPx;
+import static music.bumaza.musicbot.utils.AppUtils.resources;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MusicBotActivity extends MyActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     /**
      * FFT
@@ -72,12 +81,20 @@ public class MainActivity extends AppCompatActivity {
     private VusikView musicDynamicBackground;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        //demoRequest();
+        setContentView(R.layout.activity_music_bot);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+        navigationView.setNavigationItemSelectedListener(this);
 
         resources = this.getResources();
 
@@ -96,26 +113,69 @@ public class MainActivity extends AppCompatActivity {
         if(!checkPermissionFromDevice()){
             reqeustPermission();
         }
+
+        musicSheetView = findViewById(R.id.my_sheets);
+        Animation noteAnimation = new NoteAnimation(musicSheetView);
+        noteAnimation.setDuration(5000);
+        musicSheetView.setAnimation(noteAnimation);
+
     }
 
-    private void demoRequest(){
-        ApiSongRequestBody requestBody = new ApiSongRequestBody();
-        requestBody.song = "Nepi Jano";
-        requestBody.hashTag = new ArrayList<>(Arrays.asList(18, 156, 69, 12, 69));
-        requestBody.time = 7.256;
-        ApiRequest.sendToIdentifySong(requestBody, new Callback<ApiResponse>() {
-            @Override
-            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                if(response.isSuccessful() && response.body() != null && response.body().status.equals("OK")){
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
 
-                }
-            }
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
 
-            @Override
-            public void onFailure(Call<ApiResponse> call, Throwable t) {
+        if(id == R.id.nav_music){
+            setTitle(getString(R.string.menu_music));
 
-            }
-        });
+        }else if(id == R.id.nav_recognize){
+            setTitle(getString(R.string.menu_record_and_recognize));
+        }else if(id == R.id.nav_history){
+            setTitle(getString(R.string.menu_history));
+        }else if(id == R.id.nav_app){
+            setTitle(getString(R.string.menu_about));
+        }else if(id == R.id.nav_equalizer){
+            setTitle(getString(R.string.menu_equalizer));
+        }else if(id == R.id.nav_library){
+            setTitle(getString(R.string.menu_library));
+        }else if(id == R.id.nav_settings){
+            setTitle(getString(R.string.menu_settings));
+        }
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopRecording();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopRecording();
+        releaseVisualizer();
+
+        super.onDestroy();
     }
 
     private boolean checkPermissionFromDevice(){
@@ -130,13 +190,17 @@ public class MainActivity extends AppCompatActivity {
                 new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 MY_PERMISSIONS_RECORD_AUDIO);
     }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
     private void startRecording() {
+
+        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+        exec.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("AUDIO frequnecy compute "  + " Hz");
+            }
+        }, 0, 2, TimeUnit.SECONDS);
+
+
         recordingThread = new AudioRecordingThread(StorageUtils.getFileName(), new AudioRecordingHandler() {
             @Override
             public void onFftDataCapture(final byte[] bytes) {
@@ -184,20 +248,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stopRecording();
-    }
-
-    @Override
-    protected void onDestroy() {
-        stopRecording();
-        releaseVisualizer();
-
-        super.onDestroy();
-    }
-
     private void releaseVisualizer() {
         visualizerView.release();
         visualizerView = null;
@@ -210,8 +260,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (isRecording) {
                     stopRecording();
+                    viewPager.setVisibility(View.GONE);
                 } else{
                     startRecording();
+                    viewPager.setVisibility(View.VISIBLE);
                 }
                 handleBackground();
                 isRecording = !isRecording;
@@ -235,6 +287,7 @@ public class MainActivity extends AppCompatActivity {
     private void handleBackground(){
         if(isRecording){
             musicDynamicBackground.pauseNotesFall();
+            musicDynamicBackground.clearAnimation();
             return;
         }
 
@@ -255,27 +308,4 @@ public class MainActivity extends AppCompatActivity {
         barGraphRenderer = new BarGraphRenderer(2, paint, false);
         visualizerView.addRenderer(barGraphRenderer);
     }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        if(hasFocus) hideSystemUI();
-    }
-
-    private void hideSystemUI() {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-    }
 }
-

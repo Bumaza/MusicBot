@@ -4,10 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/main_context"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".MusicBotActivity"
     android:background="@drawable/background_gradient"
-    tools:context=".MainActivity">
-
+    tools:showIn="@layout/app_bar_music_bot">
 
     <dyanamitechetan.vusikview.VusikView
         android:id="@+id/music_dynamic_background"
@@ -16,28 +16,22 @@
         app:fallSpeed="0.13"
         app:fallCount="10"/>
 
-
     <music.bumaza.musicbot.view.MusicSheetView
-        android:id="@+id/sheets"
-        android:visibility="gone"
+        android:id="@+id/my_sheets"
+        android:visibility="visible"
         android:layout_marginTop="70dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         android:layout_width="match_parent"
         android:layout_height="50dp"/>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/toneViewPager"
-        android:visibility="gone"
+        android:visibility="visible"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
     </android.support.v4.view.ViewPager>
-
-
-
 
     <RelativeLayout
         android:id="@+id/record_context"

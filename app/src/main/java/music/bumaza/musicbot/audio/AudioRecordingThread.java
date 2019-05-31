@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import music.bumaza.musicbot.fft.Complex;
 import music.bumaza.musicbot.fft.FFT;
@@ -85,7 +88,22 @@ public class AudioRecordingThread extends Thread {
     	
         y = FFT.fft(complexSignal);
 
-        
+        double magnitude[] = new double[FFT_POINTS/2];
+        for(int i = 0; i < FFT_POINTS/2 -1; i++){
+			magnitude[i] = Math.sqrt(y[i].re()*y[i].re() + y[i].im() * y[i].im());
+		}
+        double maxMag = -1;
+        int maxIndex = -1;
+        for(int i =0 ; i < FFT_POINTS/2 -1; i++){
+        	if(magnitude[i] > maxMag){
+        		maxMag = magnitude[i];
+        		maxIndex = i;
+			}
+		}
+		double freq = maxIndex * SAMPLING_RATE / FFT_POINTS;
+
+
+
         final byte[] y_byte = new byte[y.length*2];
         y_byte[0] = (byte) y[0].re();
         y_byte[1] = (byte) y[y.length - 1].re();

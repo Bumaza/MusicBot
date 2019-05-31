@@ -31,6 +31,7 @@ public class TonePageAdapter extends PagerAdapter{
 
         TextView tvTone = layout.findViewById(R.id.tone);
         TextView tvSharp = layout.findViewById(R.id.sharp);
+        TextView tvOctave = layout.findViewById(R.id.octave);
 
 
         if(note.length() > 1){
@@ -39,6 +40,7 @@ public class TonePageAdapter extends PagerAdapter{
         }else{
             tvTone.setText(note);
         }
+        tvOctave.setText(notes.get(position).getOctaveName());
 
         container.addView(layout);
         return layout;

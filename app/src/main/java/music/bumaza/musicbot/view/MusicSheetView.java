@@ -2,11 +2,16 @@ package music.bumaza.musicbot.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+
+import java.util.ArrayList;
+
+import music.bumaza.musicbot.data.Note;
 
 import static music.bumaza.musicbot.utils.AppUtils.*;
 
@@ -19,6 +24,8 @@ public class MusicSheetView extends View{
     private int gap = convertToPx(3);
     private int legSize;
 
+    private ArrayList<Note> myNotes = new ArrayList<>();
+
     private float radiusOfNotes;
 
     /**
@@ -26,6 +33,8 @@ public class MusicSheetView extends View{
      */
     private Paint blackPenStroke, whitePenStroke, whitePenFill;
     private RectF stage;
+
+    private float point = 0;
 
 
     public MusicSheetView(Context context) {
@@ -42,7 +51,7 @@ public class MusicSheetView extends View{
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        radiusOfNotes = getHeight() / 10;
+        radiusOfNotes = convertToPx(5); //height 50 dp
 
         osnova(canvas);
 
@@ -71,19 +80,32 @@ public class MusicSheetView extends View{
 
         stage = new RectF(0, 0, getWidth(), getHeight());
 
+        legSize = (int) (convertToPx(50) / 1.5);
 
-        legSize = getHeight() / 2;
+
+        myNotes.add(new Note(1000, 100, 15, 100));
+        myNotes.add(new Note(1200, 200, 15, 100));
+        myNotes.add(new Note(1450, 150, 15, 100));
+        myNotes.add(new Note(1600, 50, 15, 100));
+
+
     }
 
     private void drawDemoNotes(Canvas canvas){
-        //canvas.drawCircle(getWidth()/4, getHeight() / 4, radiusOfNotes, whitePenFill);
-        notes(canvas, true);
-        //canvas.drawCircle(getWidth() - getWidth()/4, getHeight() - getHeight() / 4, radiusOfNotes, whitePenStroke);
+        //notes(canvas, true);
+        for(Note note : myNotes)
+            note.draw(canvas);
+    }
+
+    public void update(float interpolatedTime){
+        for(Note note : myNotes){
+            note.setX(note.getX()- (note.getSpeed() * interpolatedTime));
+        }
     }
 
     private void notes(Canvas canvas, boolean fill){
         canvas.drawCircle(getWidth()/2, getHeight()/2, radiusOfNotes, fill ? whitePenFill : whitePenStroke);
-        canvas.drawLine(getWidth()/2 + radiusOfNotes, getHeight()/2 - legSize, getWidth()/2+radiusOfNotes, getHeight()/2, fill ? whitePenFill : whitePenStroke);
+        canvas.drawLine(getWidth()/2 + radiusOfNotes , getHeight()/2, getWidth()/2 + radiusOfNotes, getMeasuredHeight() ,  whitePenStroke);
     }
 
     private void osnova(Canvas canvas){
