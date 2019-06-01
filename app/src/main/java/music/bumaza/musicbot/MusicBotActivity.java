@@ -12,6 +12,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.View;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -35,6 +36,7 @@ import music.bumaza.musicbot.adapters.TonePageAdapter;
 import music.bumaza.musicbot.audio.AudioRecordingHandler;
 import music.bumaza.musicbot.audio.AudioRecordingThread;
 import music.bumaza.musicbot.data.Tone;
+import music.bumaza.musicbot.utils.AppUtils;
 import music.bumaza.musicbot.utils.StorageUtils;
 import music.bumaza.musicbot.view.BarGraphRenderer;
 import music.bumaza.musicbot.view.MusicSheetView;
@@ -79,6 +81,7 @@ public class MusicBotActivity extends MyActivity
     private TextView frequncyTv;
     private ViewPager viewPager;
     private VusikView musicDynamicBackground;
+    private Animation noteAnimation;
 
 
 
@@ -115,9 +118,12 @@ public class MusicBotActivity extends MyActivity
         }
 
         musicSheetView = findViewById(R.id.my_sheets);
-        Animation noteAnimation = new NoteAnimation(musicSheetView);
-        noteAnimation.setDuration(5000);
+        noteAnimation = new NoteAnimation(musicSheetView);
+        noteAnimation.setDuration(1000);
+        noteAnimation.setRepeatCount(Animation.INFINITE);
         musicSheetView.setAnimation(noteAnimation);
+
+        updateSheet();
 
     }
 
@@ -192,15 +198,6 @@ public class MusicBotActivity extends MyActivity
     }
     private void startRecording() {
 
-        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
-        exec.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("AUDIO frequnecy compute "  + " Hz");
-            }
-        }, 0, 2, TimeUnit.SECONDS);
-
-
         recordingThread = new AudioRecordingThread(StorageUtils.getFileName(), new AudioRecordingHandler() {
             @Override
             public void onFftDataCapture(final byte[] bytes) {
@@ -208,10 +205,6 @@ public class MusicBotActivity extends MyActivity
                     public void run() {
                         if (visualizerView != null) {
                             visualizerView.updateVisualizerFFT(bytes);
-                            if(barGraphRenderer.getIndexOfTone() != null){
-                                viewPager.setCurrentItem(barGraphRenderer.getIndexOfTone());
-                                frequncyTv.setText(getString(R.string.frequency_text, barGraphRenderer.getFrequency()));
-                            }
                         }
                     }
                 });
@@ -239,6 +232,28 @@ public class MusicBotActivity extends MyActivity
             }
         });
         recordingThread.start();
+
+    }
+
+    private void updateSheet(){
+        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+        exec.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                if(isRecording) {
+
+                    if(barGraphRenderer.getIndexOfTone() != null){
+                        int index = barGraphRenderer.getIndexOfTone();
+                        Log.d("RECORDING",String.format("ADD NOTE INDEX: %d", index));
+                        viewPager.setCurrentItem(index);
+                        frequncyTv.setText(getString(R.string.frequency_text, barGraphRenderer.getFrequency()));
+                        musicSheetView.addNote(Tone.getDistanceFromMid(index));
+                    }
+
+                }
+
+            }
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     private void stopRecording() {
@@ -265,7 +280,7 @@ public class MusicBotActivity extends MyActivity
                     startRecording();
                     viewPager.setVisibility(View.VISIBLE);
                 }
-                handleBackground();
+                //handleBackground();
                 isRecording = !isRecording;
                 microphone.setImageResource(isRecording ? R.drawable.ic_pause : R.drawable.ic_mic);
                 frequncyTv.setVisibility(isRecording ? View.VISIBLE : View.GONE);

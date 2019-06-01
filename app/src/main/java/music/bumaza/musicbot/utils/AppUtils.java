@@ -1,7 +1,9 @@
 package music.bumaza.musicbot.utils;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.media.AudioFormat;
+import android.util.DisplayMetrics;
 
 public class AppUtils {
 
@@ -40,6 +42,14 @@ public class AppUtils {
         if(resources == null) return 0;
         final float scale = resources.getDisplayMetrics().density;
         return (int) (dp * scale + 0.5f);
+    }
+
+    public static int convertDpToPixel(int dp, Context context) {
+        return (int) (dp * ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
+    public static int convertSpToPixel(float sp, Context context) {
+        return (int) (sp * (sp * context.getResources().getDisplayMetrics().scaledDensity));
     }
 
     public static int getIndex(int freq) {

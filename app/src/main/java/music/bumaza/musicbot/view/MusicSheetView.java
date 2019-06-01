@@ -5,7 +5,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Build;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -22,19 +24,15 @@ public class MusicSheetView extends View{
      */
     private int lineWidthDP = 2;
     private int gap = convertToPx(3);
-    private int legSize;
+    private int height, centerY;
+    private int noteWidth, noteHeight, noteOffset, noteLegSize;
 
     private ArrayList<Note> myNotes = new ArrayList<>();
-
-    private float radiusOfNotes;
 
     /**
      * Android
      */
     private Paint blackPenStroke, whitePenStroke, whitePenFill;
-    private RectF stage;
-
-    private float point = 0;
 
 
     public MusicSheetView(Context context) {
@@ -51,12 +49,11 @@ public class MusicSheetView extends View{
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        radiusOfNotes = convertToPx(5); //height 50 dp
-
         osnova(canvas);
 
-        drawDemoNotes(canvas);
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            drawNotes(canvas);
+        }
     }
 
     private void initView(){
@@ -78,42 +75,54 @@ public class MusicSheetView extends View{
         whitePenFill.setStrokeWidth(convertToPx(lineWidthDP));
         whitePenFill.setColor(0xFFFFFFFF);
 
-        stage = new RectF(0, 0, getWidth(), getHeight());
+        noteLegSize = (int) (convertDpToPixel(50, getContext()) / 1.5);
+        gap = convertDpToPixel(10, getContext()); //10dp
+        height = convertDpToPixel(100, getContext());
+        centerY = height / 2;
 
-        legSize = (int) (convertToPx(50) / 1.5);
 
+        noteWidth = convertDpToPixel(14, getContext());
+        noteHeight= convertDpToPixel(8, getContext());
+        noteOffset = convertDpToPixel(2, getContext());
 
-        myNotes.add(new Note(1000, 100, 15, 100));
-        myNotes.add(new Note(1200, 200, 15, 100));
-        myNotes.add(new Note(1450, 150, 15, 100));
-        myNotes.add(new Note(1600, 50, 15, 100));
-
+        //demoNotes();
 
     }
 
-    private void drawDemoNotes(Canvas canvas){
-        //notes(canvas, true);
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void drawNotes(Canvas canvas){
         for(Note note : myNotes)
-            note.draw(canvas);
+            note.draw(canvas, whitePenFill, whitePenStroke);
     }
 
     public void update(float interpolatedTime){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            myNotes.removeIf(n -> n.getX()+n.getWidth() < 0);
+        }
         for(Note note : myNotes){
-            note.setX(note.getX()- (note.getSpeed() * interpolatedTime));
+            note.setX(note.getX()- (note.getSpeed() * 1));
         }
     }
 
-    private void notes(Canvas canvas, boolean fill){
-        canvas.drawCircle(getWidth()/2, getHeight()/2, radiusOfNotes, fill ? whitePenFill : whitePenStroke);
-        canvas.drawLine(getWidth()/2 + radiusOfNotes , getHeight()/2, getWidth()/2 + radiusOfNotes, getMeasuredHeight() ,  whitePenStroke);
+    public void addNote(int distance){
+        myNotes.add(new Note(getWidth(), centerY + (distance * gap/2), noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
     }
 
     private void osnova(Canvas canvas){
-        canvas.drawLine(0,  getHeight() , getWidth(), getHeight(), whitePenStroke);
-        canvas.drawLine(0,  getHeight() / 4  , getWidth(), getHeight() / 4 , whitePenStroke);
-        canvas.drawLine(0,  0 , getWidth(), 0 , whitePenStroke);
-        canvas.drawLine(0,  getHeight() - getHeight() / 4  , getWidth(), getHeight() - getHeight() / 4  , whitePenStroke);
-        canvas.drawLine(0,  getHeight() / 2, getWidth(), getHeight() /2  , whitePenStroke);
+        for(int l  : new int[]{-2, -1, 0, 1, 2}){
+            canvas.drawLine(0, centerY + (gap * l) , getWidth(), centerY + (gap * l), whitePenStroke);
+        }
+    }
+
+    public void clear(){
+        myNotes.clear();
+    }
+
+    private void demoNotes(){
+        myNotes.add(new Note(1000, height /2 - gap/2, noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
+        myNotes.add(new Note(1200, height /2 + gap/2, noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
+        myNotes.add(new Note(1450, 150, noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
+        myNotes.add(new Note(1600, 50, noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
     }
 }
 

@@ -19,9 +19,9 @@
     <music.bumaza.musicbot.view.MusicSheetView
         android:id="@+id/my_sheets"
         android:visibility="visible"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="20dp"
         android:layout_width="match_parent"
-        android:layout_height="50dp"/>
+        android:layout_height="100dp"/>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/toneViewPager"

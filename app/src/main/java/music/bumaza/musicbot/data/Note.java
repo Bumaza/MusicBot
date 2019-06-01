@@ -3,6 +3,7 @@ package music.bumaza.musicbot.data;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 
 import static music.bumaza.musicbot.utils.AppUtils.convertToPx;
 
@@ -11,48 +12,31 @@ public class Note {
     private float x, y, radius, width, height;
     private boolean isFill = true;
     private boolean hasLeg = true;
+    private boolean isDownLeg;
 
     private float speed = 5.55f;
+    private float offSet;
     private float legSize;
-    private float rotateAngle;
+    private float rotateAngle = 35.00f;
 
-    private Paint whitePenStroke, whitePenFill;
-
-
-    public Note(float x, float y, float radius, float legSize) {
+    public Note(float x, float y, float width, float height, float legSize, float offSet, float centerY) {
         this.x = x;
         this.y = y;
-        this.radius = radius;
+        this.width = width / 2;
+        this.height = height / 2;
         this.legSize = legSize;
-        this.rotateAngle = -convertToPx(12);
-
-        whitePenStroke = new Paint();
-        whitePenStroke.setAntiAlias(true);
-        whitePenStroke.setStyle(Paint.Style.STROKE);
-        whitePenStroke.setStrokeWidth(convertToPx(2));
-        whitePenStroke.setColor(0xFFFFFFFF);
-
-        whitePenFill = new Paint();
-        whitePenFill.setAntiAlias(true);
-        whitePenFill.setStyle(Paint.Style.FILL);
-        whitePenFill.setStrokeWidth(convertToPx(6));
-        whitePenFill.setColor(0xFFFFFFFF);
+        this.offSet = offSet;
+        this.isDownLeg = y < centerY;
     }
 
-    public void update(){
-        x -= speed;
-    }
-
-    public void draw(Canvas canvas){
-        canvas.rotate(-35, x, y);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            canvas.drawOval(x-25,y-10,x+25, y+10, isFill ? whitePenFill : whitePenStroke);
-        }else{
-            canvas.drawCircle(x, y, radius, isFill ? whitePenFill : whitePenStroke);
-        }
-        canvas.rotate(35, x, y);
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void draw(Canvas canvas, Paint whitePenFill, Paint whitePenStroke){
+        canvas.rotate(-rotateAngle, x, y);
+        canvas.drawOval(x-width,y-height,x+width, y+height, isFill ? whitePenFill : whitePenStroke);
+        canvas.rotate(rotateAngle, x, y);
         if(hasLeg){
-            canvas.drawRect(x+22-convertToPx(2), y-legSize-10, x+22, y-10, whitePenFill);
+            if(isDownLeg) canvas.drawRect(x-width+offSet/2,y+height, x-width+offSet, y+height+legSize, whitePenFill);
+            else canvas.drawRect(x+width-offSet, y-legSize-height, x+width-offSet/2, y-height+offSet, whitePenFill);
         }
     }
 
@@ -80,7 +64,59 @@ public class Note {
         this.radius = radius;
     }
 
+    public float getWidth() {
+        return width;
+    }
+
+    public void setWidth(float width) {
+        this.width = width;
+    }
+
+    public float getHeight() {
+        return height;
+    }
+
+    public void setHeight(float height) {
+        this.height = height;
+    }
+
+    public boolean isFill() {
+        return isFill;
+    }
+
+    public void setFill(boolean fill) {
+        isFill = fill;
+    }
+
+    public boolean isHasLeg() {
+        return hasLeg;
+    }
+
+    public void setHasLeg(boolean hasLeg) {
+        this.hasLeg = hasLeg;
+    }
+
     public float getSpeed() {
         return speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
+    }
+
+    public float getLegSize() {
+        return legSize;
+    }
+
+    public void setLegSize(float legSize) {
+        this.legSize = legSize;
+    }
+
+    public float getRotateAngle() {
+        return rotateAngle;
+    }
+
+    public void setRotateAngle(float rotateAngle) {
+        this.rotateAngle = rotateAngle;
     }
 }

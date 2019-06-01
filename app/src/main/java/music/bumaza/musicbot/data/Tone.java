@@ -181,4 +181,20 @@ public enum Tone {
 
         return low;
     }
+
+    public static int getDistanceFromMid(int index){
+        String midSheetTone = "H";
+        if(tones.get(index).name.equals(midSheetTone)) return 0;
+        int up = index+1, down = index-1;
+        while(up < tones.size() && !tones.get(up).name.equals(midSheetTone)) up++;
+        while(down > 0 && !tones.get(down).name.equals(midSheetTone)) down--;
+
+        if(Math.abs(index-down) < Math.abs(index-up)){
+            if(tones.get(down).name.equals(midSheetTone)) return Math.abs(index - down);
+            return -Math.abs(index-up);
+        }
+
+        if(tones.get(Math.min(up, tones.size()-1)).name.equals(midSheetTone)) return -Math.abs(up-index);
+        return Math.abs(down-index);
+    }
 }
