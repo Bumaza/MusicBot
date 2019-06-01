@@ -5,19 +5,20 @@ import android.graphics.Paint;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 
-import static music.bumaza.musicbot.utils.AppUtils.convertToPx;
-
 public class Note {
 
     private float x, y, radius, width, height;
     private boolean isFill = true;
     private boolean hasLeg = true;
+    private boolean hasSharp = false;
     private boolean isDownLeg;
 
     private float speed = 5.55f;
     private float offSet;
     private float legSize;
+    private float sharpHeight;
     private float rotateAngle = 35.00f;
+    private Tone tone;
 
     public Note(float x, float y, float width, float height, float legSize, float offSet, float centerY) {
         this.x = x;
@@ -26,18 +27,65 @@ public class Note {
         this.height = height / 2;
         this.legSize = legSize;
         this.offSet = offSet;
+        this.sharpHeight = legSize * .8f;
         this.isDownLeg = y < centerY;
+    }
+
+    public Note(float x, float y, float width, float height, float legSize, float offSet, float centerY, Tone tone) {
+        this.x = x;
+        this.y = y;
+        this.width = width / 2;
+        this.height = height / 2;
+        this.legSize = legSize;
+        this.offSet = offSet;
+        this.sharpHeight = legSize * .8f;
+        this.isDownLeg = y < centerY;
+        this.tone = tone;
+        this.hasSharp = tone.getName().contains("#");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void draw(Canvas canvas, Paint whitePenFill, Paint whitePenStroke){
+
+        //shape
         canvas.rotate(-rotateAngle, x, y);
         canvas.drawOval(x-width,y-height,x+width, y+height, isFill ? whitePenFill : whitePenStroke);
+
+        //leg
         canvas.rotate(rotateAngle, x, y);
         if(hasLeg){
             if(isDownLeg) canvas.drawRect(x-width+offSet/2,y+height, x-width+offSet, y+height+legSize, whitePenFill);
             else canvas.drawRect(x+width-offSet, y-legSize-height, x+width-offSet/2, y-height+offSet, whitePenFill);
         }
+
+        //sharp
+        if(hasSharp)
+            drawSharp(canvas, whitePenFill);
+
+
+        //help line
+        drawLine(canvas);
+
+
+    }
+
+    private void drawSharp(Canvas canvas, Paint paint){
+        float toLeft = offSet;
+        //left /
+        canvas.drawRect(x-width*2 - toLeft, y-sharpHeight/2+offSet, x-width*2+offSet/2 - toLeft, y+sharpHeight/2+offSet, paint);
+        //right /
+        canvas.drawRect(x-width-offSet - toLeft, y-sharpHeight/2, x-width-offSet/2 - toLeft, y+sharpHeight/2, paint);
+
+        //draw - -
+        canvas.rotate(-rotateAngle * .7f, x, y);
+        canvas.drawRect(x-width*2-offSet*2 - toLeft, y, x - width - toLeft/2, y-offSet/2, paint);
+        canvas.drawRect(x-width*2-offSet*2 , y-height*1.5f, x - width + toLeft/2 , y-height*1.5f-offSet/2, paint);
+        canvas.rotate(rotateAngle * .7f, x, y);
+
+    }
+
+    private void drawLine(Canvas canvas){
+
     }
 
     public float getX() {

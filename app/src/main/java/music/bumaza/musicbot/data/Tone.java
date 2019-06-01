@@ -3,6 +3,8 @@ package music.bumaza.musicbot.data;
 import java.util.Arrays;
 import java.util.List;
 
+import music.bumaza.musicbot.utils.Pair;
+
 public enum Tone {
 
     /**
@@ -182,19 +184,19 @@ public enum Tone {
         return low;
     }
 
-    public static int getDistanceFromMid(int index){
+    public static Pair<Integer, Tone> getDistanceFromMid(int index){
         String midSheetTone = "H";
-        if(tones.get(index).name.equals(midSheetTone)) return 0;
+        if(tones.get(index).name.equals(midSheetTone)) return new Pair<>(0, tones.get(index));
         int up = index+1, down = index-1;
         while(up < tones.size() && !tones.get(up).name.equals(midSheetTone)) up++;
         while(down > 0 && !tones.get(down).name.equals(midSheetTone)) down--;
 
         if(Math.abs(index-down) < Math.abs(index-up)){
-            if(tones.get(down).name.equals(midSheetTone)) return Math.abs(index - down);
-            return -Math.abs(index-up);
+            if(tones.get(down).name.equals(midSheetTone)) return new Pair<>(Math.abs(index - down), tones.get(index));
+            return new Pair<>(-Math.abs(index-up), tones.get(index));
         }
 
-        if(tones.get(Math.min(up, tones.size()-1)).name.equals(midSheetTone)) return -Math.abs(up-index);
-        return Math.abs(down-index);
+        if(tones.get(Math.min(up, tones.size()-1)).name.equals(midSheetTone)) return new Pair<>(-Math.abs(up-index), tones.get(index));
+        return new Pair<>(Math.abs(down-index), tones.get(index));
     }
 }

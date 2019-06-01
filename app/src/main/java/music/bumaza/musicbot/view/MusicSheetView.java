@@ -13,7 +13,10 @@ import android.view.View;
 
 import java.util.ArrayList;
 
+import music.bumaza.musicbot.R;
 import music.bumaza.musicbot.data.Note;
+import music.bumaza.musicbot.data.Tone;
+import music.bumaza.musicbot.utils.Pair;
 
 import static music.bumaza.musicbot.utils.AppUtils.*;
 
@@ -85,7 +88,7 @@ public class MusicSheetView extends View{
         noteHeight= convertDpToPixel(8, getContext());
         noteOffset = convertDpToPixel(2, getContext());
 
-        //demoNotes();
+        demoNotes();
 
     }
 
@@ -104,8 +107,8 @@ public class MusicSheetView extends View{
         }
     }
 
-    public void addNote(int distance){
-        myNotes.add(new Note(getWidth(), centerY + (distance * gap/2), noteWidth, noteHeight, noteLegSize, noteOffset, centerY));
+    public void addNote(Pair<Integer, Tone> tonePair){
+        myNotes.add(new Note(getWidth(), centerY + (tonePair.getLeft() * gap/2), noteWidth, noteHeight, noteLegSize, noteOffset, centerY, tonePair.getRight()));
     }
 
     private void osnova(Canvas canvas){

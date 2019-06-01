@@ -244,7 +244,7 @@ public class MusicBotActivity extends MyActivity
 
                     if(barGraphRenderer.getIndexOfTone() != null){
                         int index = barGraphRenderer.getIndexOfTone();
-                        Log.d("RECORDING",String.format("ADD NOTE INDEX: %d", index));
+                        Log.d("RECORDING",String.format("ADD NOTE INDEX: %d %s", index, Tone.getDistanceFromMid(index).getRight().getName()));
                         viewPager.setCurrentItem(index);
                         frequncyTv.setText(getString(R.string.frequency_text, barGraphRenderer.getFrequency()));
                         musicSheetView.addNote(Tone.getDistanceFromMid(index));
